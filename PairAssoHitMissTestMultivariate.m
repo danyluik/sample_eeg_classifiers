@@ -7,7 +7,6 @@ subjects = size(files, 1);
 % Arrays to store AUC for each subject
 subject_scores_lda = zeros(subjects, 1);
 subject_scores_svm = zeros(subjects, 1);
-feature_weights = zeros(subjects, 30);
 
 %% Manual feature selection
 % Electrodes that generally cover scalp, reducing redundancy in data
@@ -99,60 +98,8 @@ for index = 1:subjects
     [~,score_svm] = kfoldPredict(model_svm);
     [~,~,~,auc_svm] = perfcurve(events,score_svm(:,2),1);
     subject_scores_svm(index) = auc_svm;
-    
-    current_feature_weights = zeros(10,size(feature_weights,2));
-    
-    for p = 1:10
-        current_model_lda = model_lda.Trained{p};
-        current_feature_weights(p, :) = current_model_lda.DeltaPredictor;
-    end
-    
-    current_feature_weights = mean(current_feature_weights, 1);
-    feature_weights(index, :) = current_feature_weights;
 end
 
 %% Further analysis
-% subject_scores_lda = subject_scores_lda(subject_scores_lda ~= 0);
-% subject_scores_svm = subject_scores_svm(subject_scores_svm ~= 0);
 dist_lda = fitdist(subject_scores_lda(subject_scores_lda ~= 0), 'Normal');
 dist_svm = fitdist(subject_scores_svm(subject_scores_svm ~= 0), 'Normal');
-
-feature_weights = feature_weights(subject_scores_lda ~= 0, :);
-%feature_weights = rescale(feature_weights);
-avg_feature_weights = mean(feature_weights, 1);
-
-cluster_values = zeros(4,1);
-current = 1;
-
-for m = 2:5
-    idx = kmeans(feature_weights, m, 'Replicates', 100);
-    s = silhouette(feature_weights, idx);
-    cluster_values(current) = mean(s);
-    current = current + 1;
-end
-
-%% Cluster analysis
-nums = [2;3;4;5];
-cluster = nums(find(max(cluster_values)));
-
-idx = kmeans(feature_weights, cluster, 'Replicates', 100);
-[s,Silhouette_HitMiss_Test] = silhouette(feature_weights, idx);
-
-cluster1 = feature_weights(idx == 1, :);
-cluster2 = feature_weights(idx == 2, :);
-
-%cd 'C:\Users\Matt\Desktop\Spring-Summer 2020\CML Research\Results\Multivariate Classifiers'
-%save('PairAssoHitMissTest.mat','subject_scores_lda','dist_lda',...
-%   'subject_scores_svm','dist_svm','feature_weights','idx','s');
-%print('-dpdf','Silhouette_HitMiss_Test');
-
-% current = 1;
-% 
-% for p = 1:10:120
-%     fig1 = topoplot(normalize(mean(cluster1(:, p:p+9), 1)), 'GSN257_classifiers.sfp');
-%     fig2 = topoplot(normalize(mean(cluster2(:, p:p+9), 1)), 'GSN257_classifiers.sfp');
-%     
-%     saveas(fig1,sprintf('HitMissTest_Cluster1_%d.png',current));
-%     saveas(fig2,sprintf('HitMissTest_Cluster2_%d.png',current));
-%     current = current + 1;
-% end
