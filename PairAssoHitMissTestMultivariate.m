@@ -1,6 +1,4 @@
-%% Relevant file collection, classification preparation
-cd 'C:\Users\Matt\Desktop\Spring-Summer 2020\CML Research\Data\ERPs'
-
+%% Relevant file collection
 files = dir('*.mat');
 subjects = size(files, 1);
 
